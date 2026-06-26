@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# uv lockfile (this is a library; CI resolves from pyproject)
+uv.lock

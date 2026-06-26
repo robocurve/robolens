@@ -24,32 +24,34 @@ repos:
       - id: check-merge-conflict
       - id: check-added-large-files
 
+  # Local hooks run through `uv run` so they use this project's dev environment
+  # (matching CI) regardless of whether a virtualenv is activated. Requires uv.
   - repo: local
     hooks:
       - id: ruff-check
         name: ruff (lint, autofix)
-        entry: ruff check --fix
+        entry: uv run ruff check --fix
         language: system
         types_or: [python, pyi]
         require_serial: true
 
       - id: ruff-format
         name: ruff (format)
-        entry: ruff format
+        entry: uv run ruff format
         language: system
         types_or: [python, pyi]
         require_serial: true
 
       - id: mypy
         name: mypy (strict)
-        entry: mypy
+        entry: uv run mypy
         language: system
         types: [python]
         pass_filenames: false
 
       - id: pytest-coverage
         name: pytest (100% coverage gate)
-        entry: pytest --cov --cov-report=term-missing
+        entry: uv run pytest --cov --cov-report=term-missing
         language: system
         always_run: true # run on every push, even when no .py files changed
         pass_filenames: false
