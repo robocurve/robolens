@@ -20,7 +20,8 @@ All notable changes to this project are documented here. The format is based on
   scorers including `success_at_end`, `min_distance_to_goal`, `reached_goal_state`,
   and an operator-verdict scorer; reserved `VLMScorer` interface.
 - **Rollout engine:** open-loop chunk execution via a composable `Controller`
-  middleware layer (`DefaultController`, `SmoothingController`); an `Approver`
+  middleware layer (`DefaultController`, `SmoothingController`,
+  `EnsemblingController` for ACT/ALOHA temporal ensembling); an `Approver`
   safety gate (`AutoApprover`, `ClampApprover`); an error taxonomy
   (`PolicyError` continue vs `EmbodimentFault`/`SafetyAbort` halt); a typed
   transcript; per-trial seeding; and a `FrameStore` that streams frames to disk.
@@ -33,7 +34,9 @@ All notable changes to this project are documented here. The format is based on
   discovery so out-of-tree backends register without being imported.
 - **Logging sinks:** canonical `JsonLogSink`; optional, lazily-imported
   `RerunSink` for [Rerun](https://github.com/rerun-io/rerun) visualization.
-- **CLI:** `robolens list` and `robolens run`.
+- **CLI:** `robolens list`, `robolens run`, and `robolens inspect <log>`.
+- **String resolution:** `eval()`/`eval_set()` accept registry names
+  (`eval("cubepick-reach", "scripted", "cubepick")`) in addition to objects.
 - Dependency-free `CubePick` mock world and scripted/random/noop policies.
 
 [Unreleased]: https://github.com/robocurve/robolens/commits/main

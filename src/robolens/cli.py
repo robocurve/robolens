@@ -75,6 +75,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("-E", dest="embodiment_args", action="append", metavar="k=v")
     p_run.add_argument("--log-dir", default="logs")
     p_run.add_argument("--seed", type=int, default=0)
+
+    p_inspect = sub.add_parser("inspect", help="print a saved eval log")
+    p_inspect.add_argument("log", help="path to an EvalLog JSON file")
     return parser
 
 
@@ -110,6 +113,29 @@ def _cmd_run(args: argparse.Namespace) -> int:
     return 0 if log.status == "success" else 1
 
 
+def _cmd_inspect(path: str) -> int:
+    from robolens import read_eval_log
+
+    log = read_eval_log(path)
+    print(f"task:        {log.eval.task}")
+    print(f"policy:      {log.eval.policy}")
+    print(f"embodiment:  {log.eval.embodiment}")
+    print(f"status:      {log.status}")
+    print(f"created:     {log.eval.created}")
+    print(f"git:         {log.eval.git_commit}")
+    print(f"scenes:      {log.results.total_scenes}   trials: {log.results.total_trials}")
+    print("metrics:")
+    for name, value in sorted(log.results.metrics.items()):
+        print(f"  {name}: {value:.4g}")
+    print("scenes:")
+    for scene in log.samples:
+        reduced = "  ".join(f"{k}={v:.4g}" for k, v in sorted(scene.reduced.items()))
+        print(f"  [{scene.status}] {scene.scene_id}: {reduced}")
+    if log.error:
+        print(f"error: {log.error}")
+    return 0 if log.status == "success" else 1
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -117,6 +143,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _cmd_list(args.what)
     if args.command == "run":
         return _cmd_run(args)
+    if args.command == "inspect":
+        return _cmd_inspect(args.log)
     parser.print_help()
     return 0
 

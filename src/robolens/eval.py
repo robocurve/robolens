@@ -16,7 +16,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from robolens import __version__
 from robolens.approver import Approver, AutoApprover
@@ -84,9 +84,9 @@ class _Broadcast:
 
 
 def eval(
-    task: Task,
-    policy: Policy,
-    embodiment: Embodiment,
+    task: Task | str,
+    policy: Policy | str,
+    embodiment: Embodiment | str,
     *,
     log_dir: str = "logs",
     sinks: list[LogSink] | None = None,
@@ -99,6 +99,10 @@ def eval(
 ) -> list[EvalLog]:
     """Run ``task`` with ``policy`` on ``embodiment``; return ``[EvalLog]``.
 
+    ``task``/``policy``/``embodiment`` may be objects or **registry names**
+    (e.g. ``policy="scripted"``), resolved through the registry — the Inspect-style
+    ergonomic that keeps logs and the CLI reproducible.
+
     ``fail_on_error`` follows Inspect semantics for ``PolicyError`` (``True`` =
     fail on first, ``False`` = never, ``0<x<1`` = proportion, ``x>1`` = count).
     ``EmbodimentFault``/``SafetyAbort`` always halt regardless.
@@ -110,6 +114,15 @@ def eval(
     rollout) if the policy and embodiment are incompatible.
     """
     from robolens.logging.json_log import JsonLogSink
+    from robolens.registry import resolve
+
+    task = cast(Task, resolve("task", task)) if isinstance(task, str) else task
+    policy = cast(Policy, resolve("policy", policy)) if isinstance(policy, str) else policy
+    embodiment = (
+        cast(Embodiment, resolve("embodiment", embodiment))
+        if isinstance(embodiment, str)
+        else embodiment
+    )
 
     # Fail fast on incompatible pairings before touching any hardware/sim.
     assert_compatible(policy, embodiment, task, remap=remap)
@@ -272,9 +285,9 @@ def _should_fail(fail_on_error: bool | float, errors: int, trials: int) -> bool:
 
 
 def eval_set(
-    tasks: Task | Sequence[Task],
-    policy: Policy,
-    embodiment: Embodiment,
+    tasks: Task | str | Sequence[Task | str],
+    policy: Policy | str,
+    embodiment: Embodiment | str,
     *,
     log_dir: str = "logs",
     seed: int | None = 0,
@@ -293,7 +306,7 @@ def eval_set(
     a stable run id) is reserved for a follow-up: ``retry_attempts`` is accepted
     now so callers don't get retrofitted, but is not yet honored.
     """
-    task_list = [tasks] if isinstance(tasks, Task) else list(tasks)
+    task_list = [tasks] if isinstance(tasks, (Task, str)) else list(tasks)
     logs: list[EvalLog] = []
     for task in task_list:
         logs.extend(
